@@ -2,294 +2,263 @@
 <html lang="en">
 
 <head>
-  <meta charset="utf-8">
-  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Slot Machine</title>
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            background: #1e1e1e;
+            color: white;
+            font-family: monospace;
+            overflow: hidden;
+        }
 
-  <title>Verhulst Dieter</title>
-  <meta content="" name="description">
-  <meta content="" name="keywords">
-
-  <!-- Favicons -->
-  <link href="assets/img/favicon.png" rel="icon">
-  <link href="assets/img/apple-touch-icon.png" rel="apple-touch-icon">
-
-  <!-- Google Fonts -->
-  <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,300i,400,400i,600,600i,700,700i|Raleway:300,300i,400,400i,500,500i,600,600i,700,700i|Poppins:300,300i,400,400i,500,500i,600,600i,700,700i" rel="stylesheet">
-
-  <!-- Vendor CSS Files -->
-  <link href="assets/vendor/aos/aos.css" rel="stylesheet">
-  <link href="assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
-  <link href="assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
-  <link href="assets/vendor/boxicons/css/boxicons.min.css" rel="stylesheet">
-  <link href="assets/vendor/glightbox/css/glightbox.min.css" rel="stylesheet">
-  <link href="assets/vendor/swiper/swiper-bundle.min.css" rel="stylesheet">
-
-  <!-- Template Main CSS File -->
-  <link href="assets/css/style.css" rel="stylesheet">
+        canvas {
+            display: block;
+        }
+    </style>
 </head>
 
 <body>
+    <canvas id="slotCanvas"></canvas>
 
-  <!-- ======= Mobile nav toggle button ======= -->
-  <!-- <button type="button" class="mobile-nav-toggle d-xl-none"><i class="bi bi-list mobile-nav-toggle"></i></button> -->
-  <i class="bi bi-list mobile-nav-toggle d-xl-none"></i>
-  <!-- ======= Header ======= -->
-  <header id="header" class="d-flex flex-column justify-content-center">
+    <script>
+        const canvas = document.getElementById('slotCanvas');
+        const ctx = canvas.getContext('2d');
 
-    <nav id="navbar" class="navbar nav-menu">
-      <ul>
-        <li><a href="#hero" class="nav-link scrollto active"><i class="bx bx-home"></i> <span>Home</span></a></li>
-        <li><a href="#about" class="nav-link scrollto"><i class="bx bx-user"></i> <span>About</span></a></li>
-        <li><a href="#skills" class="nav-link scrollto"><i class="bx bx-bar-chart"></i> <span>Skills</span></a></li>
-        <li><a href="#resume" class="nav-link scrollto"><i class="bx bx-file-blank"></i> <span>Resume</span></a></li>
-      </ul>
-    </nav><!-- .nav-menu -->
+        const gridSize = 5;
+        const symbolSize = 80;
+        const symbols = ['🍒', '🍋', '🍊', '🍉', '⭐'];
+        const symbolBaseScores = {
+            '🍒': [10, 20, 30],
+            '🍋': [15, 30, 45],
+            '🍊': [20, 40, 60],
+            '🍉': [25, 50, 75],
+            '⭐': [30, 60, 90]
+        };
 
-  </header><!-- End Header -->
+        let slotGrid = Array.from({ length: gridSize }, () => Array(gridSize).fill('🍒'));
+        let highlightedCells = [];
+        let coins = 500;
+        let spinning = false;
+        const spinCost = 25;
+        const spinHistory = [];
+        let spinCounter = 0;
+        let gained = 0;
 
-  <!-- ======= Hero Section ======= -->
-  <section id="hero" class="d-flex flex-column justify-content-center">
-    <div class="container" data-aos="zoom-in" data-aos-delay="100">
-      <h1>Verhulst Dieter</h1>
-      <p><span class="typed" data-typed-items="IT Student"></span></p>
-      <div class="social-links">
-        <a href="#" class="facebook"><i class="bx bxl-facebook"></i></a>
-        <a href="#" class="instagram"><i class="bx bxl-instagram"></i></a>
-        <a href="#" class="linkedin"><i class="bx bxl-linkedin"></i></a>
-      </div>
-    </div>
-  </section><!-- End Hero -->
+        // Create audio objects for sounds
+        const spinSound = new Audio('spin1.mp3');  // Update with the correct path to your spin sound file
+        spinSound.volume = 0.2;
+        const winSound = new Audio('win.mp3');  // Add the win sound here
+        const loseSound = new Audio('lose.mp3');
+        const brokeSound = new Audio('broke.mp3');
 
-  <main id="main">
+        spinSound.loop = true; // Enable looping for the spin sound
 
-    <!-- ======= About Section ======= -->
-    <section id="about" class="about">
-      <div class="container" data-aos="fade-up">
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const topMargin = (canvas.height - gridSize * symbolSize) / 2 - 40;
+        const leftMargin = (canvas.width - gridSize * symbolSize) / 2;
+        const buttonWidth = 150;
+        const buttonHeight = 50;
+        const buttonX = canvas.width / 2 - buttonWidth / 2;
+        const buttonY = topMargin + gridSize * symbolSize + 20;
 
-        <div class="section-title">
-          <h2>About</h2>
-          <p>Beleefdheid is een basis aangevuld met spontaniteit en hulpvaardigheid, word ik als 
-            een aangenaam persoon ervaren door anderen. Ik ben leergierig waarbij vragen stellen 
-            belangrijk is. Kritiek gebruik ik om beter te worden.</p>
-        </div>
+        function drawRoundedRect(x, y, width, height, radius) {
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + width - radius, y);
+            ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+            ctx.lineTo(x + width, y + height - radius);
+            ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+            ctx.lineTo(x + radius, y + height);
+            ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+            ctx.closePath();
+        }
 
-        <div class="row">
-          <div class="col-lg-4">
-            <img src="assets/img/profile-img.jpg" class="img-fluid" alt="">
-          </div>
-          <div class="col-lg-8 pt-4 pt-lg-0 content">
-            <h3>IT Student</h3>
-            <p class="fst-italic">
-            </p>
-            <div class="row">
-              <div class="col-lg-6">
-                <ul>
-                  <li><i class="bi bi-chevron-right"></i> <strong>Birthday:</strong> <span>7 Maart 1999</span></li>
-                  <li><i class="bi bi-chevron-right"></i> <strong>City:</strong> <span>Temse, Belgie</span></li>
-                  <li><i class="bi bi-chevron-right"></i> <strong>Age:</strong> <span>22</span></li>
-                </ul>
-              </div>
-              <div class="col-lg-6">
-                <ul>
-                  <li><i class="bi bi-chevron-right"></i> <strong>Degree:</strong> <span>Toegepaste Informatica, Hogent</span></li>
-                  <li><i class="bi bi-chevron-right"></i> <strong>Specialization:</strong> <span>Mobile & Enterprise developer</span></li>
-                  <li><i class="bi bi-chevron-right"></i> <strong>Email:</strong> <span>dieterverhulst13@gmail.com</span></li>  
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
+        function drawGrid() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      </div>
-    </section><!-- End About Section -->
+            for (let r = 0; r < gridSize; r++) {
+                for (let c = 0; c < gridSize; c++) {
+                    let x = leftMargin + c * symbolSize + symbolSize / 2;
+                    let y = topMargin + r * symbolSize + symbolSize / 2;
+                    let symbol = slotGrid[r][c];
 
-    <!-- ======= Skills Section ======= -->
-    <section id="skills" class="skills section-bg">
-      <div class="container" data-aos="fade-up">
+                    if (highlightedCells.some(cell => cell.r === r && cell.c === c)) {
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+                        ctx.fillRect(leftMargin + c * symbolSize, topMargin + r * symbolSize, symbolSize, symbolSize);
+                    }
 
-        <div class="section-title">
-          <h2>Skills</h2>
-        </div>
+                    ctx.fillStyle = 'white';
+                    ctx.font = '40px monospace';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(symbol, x, y);
+                }
+            }
 
-        <div class="row skills-content">
+            // Draw rounded Spin button
+            drawRoundedRect(buttonX, buttonY, buttonWidth, buttonHeight, 12);
+            ctx.fillStyle = '#28a745';
+            ctx.fill();
+            ctx.fillStyle = 'white';
+            ctx.font = '20px monospace';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('SPIN', buttonX + buttonWidth / 2, buttonY + buttonHeight / 2);
 
-          <div class="col-lg-6">
+            // Draw coins
+            ctx.fillStyle = 'white';
+            ctx.font = '22px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText(`Coins: ${coins}`, canvas.width / 2, topMargin - 20);
 
-            <div class="progress">
-              <span class="skill">MS-Office <i class="val">80%</i></span>
-              <div class="progress-bar-wrap">
-                <div class="progress-bar" role="progressbar" aria-valuenow="80" aria-valuemin="0" aria-valuemax="100"></div>
-              </div>
-            </div>
+            // Draw legend (moved 50px lower)
+            const legend = [
+                '🍒: 3=10  4=20  5=30',
+                '🍋: 3=15  4=30  5=45',
+                '🍊: 3=20  4=40  5=60',
+                '🍉: 3=25  4=50  5=75',
+                '⭐: 3=30  4=60  5=90'
+            ];
+            ctx.font = '18px monospace';
+            legend.forEach((line, i) => {
+                ctx.fillText(line, canvas.width / 2, topMargin + gridSize * symbolSize + 140 + i * 22);
+            });
 
-            <div class="progress">
-              <span class="skill">Java <i class="val">80%</i></span>
-              <div class="progress-bar-wrap">
-                <div class="progress-bar" role="progressbar" aria-valuenow="80" aria-valuemin="0" aria-valuemax="100"></div>
-              </div>
-            </div>
+            // Draw history
+            const historyX = canvas.width - 250;
+            const historyY = 50;
+            ctx.textAlign = 'left';
+            ctx.font = '16px monospace';
+            ctx.fillText(`History:          AVG: ${Math.round(gained/spinCounter)}`, historyX, historyY);
 
-            <div class="progress">
-              <span class="skill">.Net <i class="val">80%</i></span>
-              <div class="progress-bar-wrap">
-                <div class="progress-bar" role="progressbar" aria-valuenow="80" aria-valuemin="0" aria-valuemax="100"></div>
-              </div>
-            </div>
+            for (let i = 0; i < Math.min(50, spinHistory.length); i++) {
+                ctx.fillText(spinHistory[i], historyX, historyY + 24 + i * 18);
+            }
+        }
 
-            <div class="progress">
-              <span class="skill">HTML/CSS <i class="val">80%</i></span>
-              <div class="progress-bar-wrap">
-                <div class="progress-bar" role="progressbar" aria-valuenow="80" aria-valuemin="0" aria-valuemax="100"></div>
-              </div>
-            </div>
+        function randomizeGrid() {
+            for (let r = 0; r < gridSize; r++) {
+                for (let c = 0; c < gridSize; c++) {
+                    slotGrid[r][c] = symbols[Math.floor(Math.random() * symbols.length)];
+                }
+            }
+        }
 
-            <div class="progress">
-              <span class="skill">Javascript <i class="val">60%</i></span>
-              <div class="progress-bar-wrap">
-                <div class="progress-bar" role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"></div>
-              </div>
-            </div>
+        function spin() {
+            if (spinning || coins < spinCost) {
+                brokeSound.play();
+                return;
+            } 
+            coins -= spinCost;
+            spinning = true;
+            highlightedCells = [];
+            randomizeGrid();
+            drawGrid();
 
-          </div>
+            // Play the spin sound in a loop
+            spinSound.play();
 
-          <div class="col-lg-6">
+            const spinDuration = Math.random() * 2000 + 2000; // Random between 2 and 4 seconds
+            let elapsedTime = 0;
+            const spinInterval = setInterval(() => {
+                // Shift the grid downward (simulate spinning)
+                slotGrid.unshift(slotGrid.pop()); // Move last row to the top
+                drawGrid();
+                elapsedTime += 100;
 
-            <div class="progress">
-              <span class="skill">SQL <i class="val">80%</i></span>
-              <div class="progress-bar-wrap">
-                <div class="progress-bar" role="progressbar" aria-valuenow="80" aria-valuemin="0" aria-valuemax="100"></div>
-              </div>
-            </div>
+                if (elapsedTime >= spinDuration) {
+                    clearInterval(spinInterval);
+                    finishSpin();
+                }
+            }, 100); // Shift grid every 100ms
+        }
 
-            <div class="progress">
-              <span class="skill">Angular <i class="val">60%</i></span>
-              <div class="progress-bar-wrap">
-                <div class="progress-bar" role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"></div>
-              </div>
-            </div>
+        function finishSpin() {
+            // Stop the spin sound after the spin finishes
+            spinSound.pause();
+            spinSound.currentTime = 0; // Reset sound to start from the beginning next time
 
-            <div class="progress">
-              <span class="skill">C# <i class="val">95%</i></span>
-              <div class="progress-bar-wrap">
-                <div class="progress-bar" role="progressbar" aria-valuenow="95" aria-valuemin="0" aria-valuemax="100"></div>
-              </div>
-            </div>
+            spinCounter++;
+            let reward = calculateScore();
+            gained += reward;
+            coins += reward;
 
-            <div class="progress">
-              <span class="skill">Kotlin <i class="val">75%</i></span>
-              <div class="progress-bar-wrap">
-                <div class="progress-bar" role="progressbar" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100"></div>
-              </div>
-            </div>
+            // Play the win sound if the reward is greater than 0 (indicating a win)
+            if (reward > 0) {
+                winSound.volume = Math.min(reward/100, 1);
+                winSound.play();
+            } else {
+                loseSound.play();
+            }
 
-            <div class="progress">
-              <span class="skill">Blazor <i class="val">60%</i></span>
-              <div class="progress-bar-wrap">
-                <div class="progress-bar" role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"></div>
-              </div>
-            </div>
+            spinning = false;
+            drawGrid();
+        }
 
-          </div>
+        function calculateScore() {
+            let score = 0;
+            let combos = [];
 
-        </div>
+            function checkLine(line, getCell) {
+                let i = 0;
+                while (i < line.length) {
+                    let count = 1;
+                    while (i + count < line.length && line[i] === line[i + count]) {
+                        count++;
+                    }
 
-      </div>
-    </section><!-- End Skills Section -->
+                    if (count >= 3) {
+                        const symbol = line[i];
+                        const base = symbolBaseScores[symbol][count - 3];
+                        score += base;
+                        combos.push(`${count}x${symbol}`);
+                        for (let j = 0; j < count; j++) {
+                            const { r, c } = getCell(i + j);
+                            highlightedCells.push({ r, c });
+                        }
+                        i += count;
+                    } else {
+                        i++;
+                    }
+                }
+            }
 
-    <!-- ======= Resume Section ======= -->
-    <section id="resume" class="resume">
-      <div class="container" data-aos="fade-up">
+            // Horizontal
+            for (let r = 0; r < gridSize; r++) {
+                checkLine(slotGrid[r], idx => ({ r, c: idx }));
+            }
 
-        <div class="section-title">
-          <h2>Resume</h2>
-          <p>Work & other Experiences</p>
-        </div>
+            // Vertical
+            for (let c = 0; c < gridSize; c++) {
+                let col = slotGrid.map(row => row[c]);
+                checkLine(col, idx => ({ r: idx, c }));
+            }
 
-        <div class="row">
-          <div class="col-lg-6">
-            <h3 class="resume-title">Work Experience</h3>
-            <div class="resume-item">
-              <h4>Cloud Developer</h4>
-              <h5>March 2021 - May 2021</h5>
-              <p><em>Cloudway, Kontich</em></p>
-              <p>14 Weken stage gelopen, Hier heb ik een trade platform ontwikkeld voor de functionaliteiten van AWS QLDB te testen.
-              </p>
-            </div>
-            <div class="resume-item">
-              <h4>IT Support</h4>
-              <h5>August 2018 - August 2018</h5>
-              <p><em>Alcon, Puurs</em></p>
-              <p>4 weken Studenten job gelopen op de IT dienst
-              </p>
-            </div>
-            <div class="resume-item">
-              <h4>Animator</h4>
-              <h5>Juli 2016 - August 2018</h5>
-              <p><em>Spegt, Temse</em></p>
-              <p>Tijdens ge grote vakantie animator geweest op het speelplein van Temse
-              </p>
-            </div>
-            <h3 class="resume-title">Stages</h3>
-            <div class="resume-item">
-              <h4>IT-Helpdesk</h4>
-              <h5>May 2018 - May 2018</h5>
-              <p><em>Fujifilm Electronics, Zwijndrecht </em></p>
-              <p>2 Weken stage gelopen</p>
-            </div>
-          
-          </div>
-          <div class="col-lg-6">
-            <h3 class="resume-title">Education</h3>
-            <div class="resume-item">
-              <h4>Toegepaste Informatica</h4>
-              <h5>September 2018 - Heden</h5>
-              <p><em>Hogent, Gent</em></p>
-            </div>
-            <div class="resume-item">
-              <h4>Informatica Beheer</h4>
-              <h5>September 2016 - June 2018</h5>
-              <p><em>Broederschool, Sint-Niklaas</em></p>
-            </div>
-            <h3 class="resume-title">Cursussen</h3>
-            <div class="resume-item">
-              <h4>Attest Animator</h4>
-              <h5>April 2016 - April 2016</h5>
-              <p><em>Crejaksi</em></p>
-            </div>
-          </div>
-        </div>
+            const entry = `#${spinCounter.toString().padStart(2, '0')} +${score.toString().padStart(4)} [${combos.join(', ')}]`;
+            spinHistory.unshift(entry);
+            if (spinHistory.length > 50) spinHistory.pop();
+            return score;
+        }
 
-      </div>
-    </section><!-- End Resume Section -->
-  </main><!-- End #main -->
+        canvas.addEventListener('click', e => {
+            const x = e.clientX;
+            const y = e.clientY;
+            if (x >= buttonX && x <= buttonX + buttonWidth && y >= buttonY && y <= buttonY + buttonHeight) {
+                spin();
+            }
+        });
 
-  <!-- ======= Footer ======= -->
-  <footer id="footer">
-    <div class="container">
-      <h3>Verhulst Dieter</h3>
-      <div class="copyright">
-        &copy; Copyright <strong><span>Verhulst Dieter</span></strong>. All Rights Reserved
-      </div>
-    </div>
-  </footer><!-- End Footer -->
-
-  <div id="preloader"></div>
-  <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
-
-  <!-- Vendor JS Files -->
-  <script src="assets/vendor/aos/aos.js"></script>
-  <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-  <script src="assets/vendor/glightbox/js/glightbox.min.js"></script>
-  <script src="assets/vendor/isotope-layout/isotope.pkgd.min.js"></script>
-  <script src="assets/vendor/php-email-form/validate.js"></script>
-  <script src="assets/vendor/purecounter/purecounter.js"></script>
-  <script src="assets/vendor/swiper/swiper-bundle.min.js"></script>
-  <script src="assets/vendor/typed.js/typed.min.js"></script>
-  <script src="assets/vendor/waypoints/noframework.waypoints.js"></script>
-
-  <!-- Template Main JS File -->
-  <script src="assets/js/main.js"></script>
-
+        randomizeGrid();
+        drawGrid();
+    </script>
 </body>
 
 </html>
