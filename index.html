@@ -481,6 +481,7 @@
                 }
                 setTimeout(spin, 1000);
             } else if (autoSpinEnabled) {
+                bestMultiplier = Math.max(bestMultiplier, multiplier);
                 multiplier = 1;
                 setTimeout(spin, 1000);
             }
