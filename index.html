@@ -30,6 +30,7 @@
 </head>
 <body>
   <canvas id="slotCanvas"></canvas>
+
   <script>
     const canvas = document.getElementById('slotCanvas');
     const ctx = canvas.getContext('2d');
@@ -48,7 +49,7 @@
     let combos = [];
     let coins = 500;
     let spinning = false;
-    const spinCost = 50;
+    const spinCost = 10;
     let spinCounter = 0;
     let gained = 0;
     const spinHistory = [];
@@ -71,6 +72,7 @@
     const buttonY = topMargin + gridSize * symbolSize + 20;
 
     let popState = {};
+    let autoSpinEnabled = false;
 
     function shakeCanvas() {
       let x = Math.random() * 20 - 10;
@@ -106,7 +108,7 @@
           const key = `${r},${c}`;
           if (popState[key]) {
             const elapsed = Date.now() - popState[key];
-            const t = Math.min(elapsed / 750, 1); // Vertraagd pop-effect (nu 250ms)
+            const t = Math.min(elapsed / 750, 1); 
             scale = 1 + 0.5 * Math.sin(t * Math.PI);
             if (t >= 1) delete popState[key];
           }
@@ -171,6 +173,18 @@
       for (let i = 0; i < Math.min(50, spinHistory.length); i++) {
         ctx.fillText(spinHistory[i], historyX, historyY + 24 + i * 18);
       }
+
+      // Auto-spin option drawing
+      const autoSpinX = canvas.width - 100;
+      const autoSpinY = topMargin + gridSize * symbolSize + 270;
+      ctx.fillStyle = 'white';
+      ctx.font = '14px monospace';
+      ctx.fillText('Auto-spin', autoSpinX, autoSpinY);
+      ctx.beginPath();
+      ctx.arc(autoSpinX + 80, autoSpinY, 7, 0, 2 * Math.PI);
+      ctx.fillStyle = autoSpinEnabled ? '#28a745' : 'grey';
+      ctx.fill();
+      ctx.stroke();
     }
 
     function randomSymbol() {
@@ -263,7 +277,7 @@
         totalScore += calculateAndRemove(marked);
         refillGrid();
         drawGrid();
-        await new Promise(res => setTimeout(res, 300)); // Vertraging voor de cascade (nu 300ms)
+        await new Promise(res => setTimeout(res, 300)); // Delay for cascade (300ms)
       }
       return totalScore;
     }
@@ -312,12 +326,23 @@
 
       drawGrid();
       spinning = false;
+
+      if (autoSpinEnabled) {
+        setTimeout(spin, 1000);  // Start auto-spin after delay
+      }
     }
 
     canvas.addEventListener('click', e => {
       const x = e.clientX, y = e.clientY;
       if (x >= buttonX && x <= buttonX + buttonWidth && y >= buttonY && y <= buttonY + buttonHeight) {
         spin();
+      }
+      // Check if auto-spin option is clicked
+      const autoSpinX = canvas.width - 100;
+      const autoSpinY = topMargin + gridSize * symbolSize + 270;
+      if (x >= autoSpinX + 73 && x <= autoSpinX + 87 && y >= autoSpinY - 7 && y <= autoSpinY + 7) {
+        autoSpinEnabled = !autoSpinEnabled;
+        drawGrid();
       }
     });
 
