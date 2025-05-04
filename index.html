@@ -1,264 +1,330 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Slot Machine</title>
-    <style>
-        html,
-        body {
-            margin: 0;
-            padding: 0;
-            background: #1e1e1e;
-            color: white;
-            font-family: monospace;
-            overflow: hidden;
-        }
-
-        canvas {
-            display: block;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Slot Machine</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #1e1e1e;
+      color: white;
+      font-family: monospace;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+    }
+    #spinButton {
+      transition: all 0.2s ease;
+    }
+    #spinButton:hover {
+      transform: scale(1.1);
+      background-color: #218838;
+    }
+    #spinButton:active {
+      transform: scale(0.95);
+    }
+  </style>
 </head>
-
 <body>
-    <canvas id="slotCanvas"></canvas>
+  <canvas id="slotCanvas"></canvas>
+  <script>
+    const canvas = document.getElementById('slotCanvas');
+    const ctx = canvas.getContext('2d');
+    const gridSize = 5;
+    const symbolSize = 80;
+    const symbols = ['🍒', '🍋', '🍊', '🍉', '⭐'];
+    const symbolBaseScores = {
+      '🍒': [10, 20, 30, 40, 50, 60, 70],
+      '🍋': [15, 30, 45, 60, 75, 90, 105],
+      '🍊': [20, 40, 60, 80, 100, 120, 140],
+      '🍉': [25, 50, 75, 100, 125, 150, 175],
+      '⭐': [30, 60, 90, 120, 150, 180, 210]
+    };
 
-    <script>
-        const canvas = document.getElementById('slotCanvas');
-        const ctx = canvas.getContext('2d');
+    let slotGrid = [];
+    let combos = [];
+    let coins = 500;
+    let spinning = false;
+    const spinCost = 50;
+    let spinCounter = 0;
+    let gained = 0;
+    const spinHistory = [];
 
-        const gridSize = 5;
-        const symbolSize = 80;
-        const symbols = ['🍒', '🍋', '🍊', '🍉', '⭐'];
-        const symbolBaseScores = {
-            '🍒': [10, 20, 30],
-            '🍋': [15, 30, 45],
-            '🍊': [20, 40, 60],
-            '🍉': [25, 50, 75],
-            '⭐': [30, 60, 90]
-        };
+    const spinSound = new Audio('spin1.mp3');
+    spinSound.volume = 0.2;
+    spinSound.loop = true;
+    const winSound = new Audio('win.mp3');
+    const loseSound = new Audio('lose.mp3');
+    const brokeSound = new Audio('broke.mp3');
+    const popSound = new Audio('pop.mp3');
 
-        let slotGrid = Array.from({ length: gridSize }, () => Array(gridSize).fill('🍒'));
-        let highlightedCells = [];
-        let coins = 500;
-        let spinning = false;
-        const spinCost = 25;
-        const spinHistory = [];
-        let spinCounter = 0;
-        let gained = 0;
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const topMargin = (canvas.height - gridSize * symbolSize) / 2 - 40;
+    const leftMargin = (canvas.width - gridSize * symbolSize) / 2;
+    const buttonWidth = 150;
+    const buttonHeight = 50;
+    const buttonX = canvas.width / 2 - buttonWidth / 2;
+    const buttonY = topMargin + gridSize * symbolSize + 20;
 
-        // Create audio objects for sounds
-        const spinSound = new Audio('spin1.mp3');  // Update with the correct path to your spin sound file
-        spinSound.volume = 0.2;
-        const winSound = new Audio('win.mp3');  // Add the win sound here
-        const loseSound = new Audio('lose.mp3');
-        const brokeSound = new Audio('broke.mp3');
+    let popState = {};
 
-        spinSound.loop = true; // Enable looping for the spin sound
+    function shakeCanvas() {
+      let x = Math.random() * 20 - 10;
+      let y = Math.random() * 20 - 10;
+      canvas.style.transform = `translate(${x}px, ${y}px)`;
+      setTimeout(() => {
+        canvas.style.transform = 'translate(0, 0)';
+      }, 100);
+    }
 
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        const topMargin = (canvas.height - gridSize * symbolSize) / 2 - 40;
-        const leftMargin = (canvas.width - gridSize * symbolSize) / 2;
-        const buttonWidth = 150;
-        const buttonHeight = 50;
-        const buttonX = canvas.width / 2 - buttonWidth / 2;
-        const buttonY = topMargin + gridSize * symbolSize + 20;
+    function drawRoundedRect(x, y, width, height, radius) {
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + width - radius, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+      ctx.lineTo(x + width, y + height - radius);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+      ctx.lineTo(x + radius, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+    }
 
-        function drawRoundedRect(x, y, width, height, radius) {
-            ctx.beginPath();
-            ctx.moveTo(x + radius, y);
-            ctx.lineTo(x + width - radius, y);
-            ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-            ctx.lineTo(x + width, y + height - radius);
-            ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-            ctx.lineTo(x + radius, y + height);
-            ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-            ctx.lineTo(x, y + radius);
-            ctx.quadraticCurveTo(x, y, x + radius, y);
-            ctx.closePath();
+    function drawGrid() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (let r = 0; r < gridSize; r++) {
+        for (let c = 0; c < gridSize; c++) {
+          const x = leftMargin + c * symbolSize + symbolSize / 2;
+          const y = topMargin + r * symbolSize + symbolSize / 2;
+          const symbol = slotGrid[r][c];
+          let scale = 1;
+          const key = `${r},${c}`;
+          if (popState[key]) {
+            const elapsed = Date.now() - popState[key];
+            const t = Math.min(elapsed / 750, 1); // Vertraagd pop-effect (nu 250ms)
+            scale = 1 + 0.5 * Math.sin(t * Math.PI);
+            if (t >= 1) delete popState[key];
+          }
+          ctx.save();
+          ctx.translate(x, y);
+          ctx.scale(scale, scale);
+          ctx.fillStyle = 'white';
+          ctx.font = '40px monospace';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          if (symbol) ctx.fillText(symbol, 0, 0);
+          ctx.restore();
         }
+      }
 
-        function drawGrid() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawRoundedRect(buttonX, buttonY, buttonWidth, buttonHeight, 12);
+      ctx.fillStyle = '#28a745';
+      ctx.fill();
+      ctx.fillStyle = 'white';
+      ctx.font = '20px monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('SPIN', buttonX + buttonWidth / 2, buttonY + buttonHeight / 2);
 
-            for (let r = 0; r < gridSize; r++) {
-                for (let c = 0; c < gridSize; c++) {
-                    let x = leftMargin + c * symbolSize + symbolSize / 2;
-                    let y = topMargin + r * symbolSize + symbolSize / 2;
-                    let symbol = slotGrid[r][c];
+      ctx.font = '22px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(`Coins: ${coins}`, canvas.width / 2, topMargin - 20);
 
-                    if (highlightedCells.some(cell => cell.r === r && cell.c === c)) {
-                        ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
-                        ctx.fillRect(leftMargin + c * symbolSize, topMargin + r * symbolSize, symbolSize, symbolSize);
-                    }
+      ctx.textAlign = 'left';
+      ctx.font = '18px monospace';
 
-                    ctx.fillStyle = 'white';
-                    ctx.font = '40px monospace';
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    ctx.fillText(symbol, x, y);
-                }
-            }
+      const legendData = [
+        { symbol: '🍒', scores: symbolBaseScores['🍒'] },
+        { symbol: '🍋', scores: symbolBaseScores['🍋'] },
+        { symbol: '🍊', scores: symbolBaseScores['🍊'] },
+        { symbol: '🍉', scores: symbolBaseScores['🍉'] },
+        { symbol: '⭐',  scores: symbolBaseScores['⭐'] }
+      ];
 
-            // Draw rounded Spin button
-            drawRoundedRect(buttonX, buttonY, buttonWidth, buttonHeight, 12);
-            ctx.fillStyle = '#28a745';
-            ctx.fill();
-            ctx.fillStyle = 'white';
-            ctx.font = '20px monospace';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('SPIN', buttonX + buttonWidth / 2, buttonY + buttonHeight / 2);
+      const legendX = canvas.width / 2 - 160;
+      const legendYStart = topMargin + gridSize * symbolSize + 140;
+      const colWidths = [40, 40, 40, 40, 40, 40, 40, 40];
 
-            // Draw coins
-            ctx.fillStyle = 'white';
-            ctx.font = '22px monospace';
-            ctx.textAlign = 'center';
-            ctx.fillText(`Coins: ${coins}`, canvas.width / 2, topMargin - 20);
+      const header = ['Sym', '3x', '4x', '5x', '6x', '7x', '8x', '9x'];
+      header.forEach((text, col) => {
+        ctx.fillText(text, legendX + colWidths.slice(0, col).reduce((a, b) => a + b, 0), legendYStart);
+      });
 
-            // Draw legend (moved 50px lower)
-            const legend = [
-                '🍒: 3=10  4=20  5=30',
-                '🍋: 3=15  4=30  5=45',
-                '🍊: 3=20  4=40  5=60',
-                '🍉: 3=25  4=50  5=75',
-                '⭐: 3=30  4=60  5=90'
-            ];
-            ctx.font = '18px monospace';
-            legend.forEach((line, i) => {
-                ctx.fillText(line, canvas.width / 2, topMargin + gridSize * symbolSize + 140 + i * 22);
-            });
-
-            // Draw history
-            const historyX = canvas.width - 250;
-            const historyY = 50;
-            ctx.textAlign = 'left';
-            ctx.font = '16px monospace';
-            ctx.fillText(`History:          AVG: ${Math.round(gained/spinCounter)}`, historyX, historyY);
-
-            for (let i = 0; i < Math.min(50, spinHistory.length); i++) {
-                ctx.fillText(spinHistory[i], historyX, historyY + 24 + i * 18);
-            }
-        }
-
-        function randomizeGrid() {
-            for (let r = 0; r < gridSize; r++) {
-                for (let c = 0; c < gridSize; c++) {
-                    slotGrid[r][c] = symbols[Math.floor(Math.random() * symbols.length)];
-                }
-            }
-        }
-
-        function spin() {
-            if (spinning || coins < spinCost) {
-                brokeSound.play();
-                return;
-            } 
-            coins -= spinCost;
-            spinning = true;
-            highlightedCells = [];
-            randomizeGrid();
-            drawGrid();
-
-            // Play the spin sound in a loop
-            spinSound.play();
-
-            const spinDuration = Math.random() * 2000 + 2000; // Random between 2 and 4 seconds
-            let elapsedTime = 0;
-            const spinInterval = setInterval(() => {
-                // Shift the grid downward (simulate spinning)
-                slotGrid.unshift(slotGrid.pop()); // Move last row to the top
-                drawGrid();
-                elapsedTime += 100;
-
-                if (elapsedTime >= spinDuration) {
-                    clearInterval(spinInterval);
-                    finishSpin();
-                }
-            }, 100); // Shift grid every 100ms
-        }
-
-        function finishSpin() {
-            // Stop the spin sound after the spin finishes
-            spinSound.pause();
-            spinSound.currentTime = 0; // Reset sound to start from the beginning next time
-
-            spinCounter++;
-            let reward = calculateScore();
-            gained += reward;
-            coins += reward;
-
-            // Play the win sound if the reward is greater than 0 (indicating a win)
-            if (reward > 0) {
-                winSound.volume = Math.min(reward/100, 1);
-                winSound.play();
-            } else {
-                loseSound.play();
-            }
-
-            spinning = false;
-            drawGrid();
-        }
-
-        function calculateScore() {
-            let score = 0;
-            let combos = [];
-
-            function checkLine(line, getCell) {
-                let i = 0;
-                while (i < line.length) {
-                    let count = 1;
-                    while (i + count < line.length && line[i] === line[i + count]) {
-                        count++;
-                    }
-
-                    if (count >= 3) {
-                        const symbol = line[i];
-                        const base = symbolBaseScores[symbol][count - 3];
-                        score += base;
-                        combos.push(`${count}x${symbol}`);
-                        for (let j = 0; j < count; j++) {
-                            const { r, c } = getCell(i + j);
-                            highlightedCells.push({ r, c });
-                        }
-                        i += count;
-                    } else {
-                        i++;
-                    }
-                }
-            }
-
-            // Horizontal
-            for (let r = 0; r < gridSize; r++) {
-                checkLine(slotGrid[r], idx => ({ r, c: idx }));
-            }
-
-            // Vertical
-            for (let c = 0; c < gridSize; c++) {
-                let col = slotGrid.map(row => row[c]);
-                checkLine(col, idx => ({ r: idx, c }));
-            }
-
-            const entry = `#${spinCounter.toString().padStart(2, '0')} +${score.toString().padStart(4)} [${combos.join(', ')}]`;
-            spinHistory.unshift(entry);
-            if (spinHistory.length > 50) spinHistory.pop();
-            return score;
-        }
-
-        canvas.addEventListener('click', e => {
-            const x = e.clientX;
-            const y = e.clientY;
-            if (x >= buttonX && x <= buttonX + buttonWidth && y >= buttonY && y <= buttonY + buttonHeight) {
-                spin();
-            }
+      legendData.forEach((item, rowIdx) => {
+        const rowY = legendYStart + (rowIdx + 1) * 22;
+        const values = [item.symbol, ...item.scores];
+        values.forEach((val, col) => {
+          ctx.fillText(String(val), legendX + colWidths.slice(0, col).reduce((a, b) => a + b, 0), rowY);
         });
+      });
 
-        randomizeGrid();
+      ctx.textAlign = 'left';
+      ctx.font = '16px monospace';
+      const historyX = 25;
+      const historyY = 50;
+      ctx.fillText(`History: AVG: ${Math.round(gained / Math.max(1, spinCounter))}`, historyX, historyY);
+      for (let i = 0; i < Math.min(50, spinHistory.length); i++) {
+        ctx.fillText(spinHistory[i], historyX, historyY + 24 + i * 18);
+      }
+    }
+
+    function randomSymbol() {
+      return symbols[Math.floor(Math.random() * symbols.length)];
+    }
+
+    function refillGrid() {
+      spinSound.play();
+      for (let c = 0; c < gridSize; c++) {
+        let col = [];
+        for (let r = 0; r < gridSize; r++) {
+          if (slotGrid[r][c]) col.push(slotGrid[r][c]);
+        }
+        while (col.length < gridSize) col.unshift(randomSymbol());
+        for (let r = 0; r < gridSize; r++) slotGrid[r][c] = col[r];
+      }
+    }
+
+    function findClusters() {
+      let marked = [];
+      for (let r = 0; r < gridSize; r++) {
+        let count = 1;
+        for (let c = 1; c <= gridSize; c++) {
+          if (c < gridSize && slotGrid[r][c] === slotGrid[r][c - 1]) {
+            count++;
+          } else {
+            if (count >= 3) for (let k = c - count; k < c; k++) marked.push({ r, c: k });
+            count = 1;
+          }
+        }
+      }
+      for (let c = 0; c < gridSize; c++) {
+        let count = 1;
+        for (let r = 1; r <= gridSize; r++) {
+          if (r < gridSize && slotGrid[r][c] === slotGrid[r - 1][c]) {
+            count++;
+          } else {
+            if (count >= 3) for (let k = r - count; k < r; k++) marked.push({ r: k, c });
+            count = 1;
+          }
+        }
+      }
+      return marked;
+    }
+
+    function calculateAndRemove(marked) {
+      let score = 0;
+      let counted = {};
+      marked.forEach(({ r, c }) => {
+        let symbol = slotGrid[r][c];
+        counted[symbol] = (counted[symbol] || 0) + 1;
+        slotGrid[r][c] = null;
+      });
+      for (const [symbol, count] of Object.entries(counted)) {
+        if (count >= 3) {
+          let idx = Math.min(6, count - 3); 
+          score += symbolBaseScores[symbol][idx];
+          combos.push(`${count}x${symbol}`);
+        }
+      }
+      return score;
+    }
+
+    async function startPopAnimation(marked) {
+      marked.forEach(({ r, c }) => {
+        popState[`${r},${c}`] = Date.now();
+      });
+
+      return new Promise(resolve => {
+        const animate = () => {
+          drawGrid();
+          if (Object.keys(popState).length) {
+            requestAnimationFrame(animate);
+          } else {
+            resolve();
+          }
+        };
+        animate();
+      });
+    }
+
+    async function cascade() {
+      let totalScore = 0;
+      while (true) {
+        const marked = findClusters();
+        if (!marked.length) break;
+        spinSound.pause();
+        popSound.play();
+        await startPopAnimation(marked);
+        totalScore += calculateAndRemove(marked);
+        refillGrid();
         drawGrid();
-    </script>
-</body>
+        await new Promise(res => setTimeout(res, 300)); // Vertraging voor de cascade (nu 300ms)
+      }
+      return totalScore;
+    }
 
+    async function spin() {
+      combos = [];
+      if (spinning || coins < spinCost) {
+        brokeSound.play();
+        return;
+      }
+      coins -= spinCost;
+      spinning = true;
+      spinSound.play();
+
+      for (let r = 0; r < gridSize; r++) {
+        slotGrid[r] = Array.from({ length: gridSize }, randomSymbol);
+      }
+      drawGrid();
+
+      const spinInterval = setInterval(() => {
+        slotGrid.unshift(slotGrid.pop());
+        drawGrid();
+      }, 100);
+
+      await new Promise(res => setTimeout(res, 1500));
+      clearInterval(spinInterval);
+
+      let score = await cascade();
+      coins += score;
+      gained += score;
+
+      spinSound.pause();
+      spinSound.currentTime = 0;
+
+      if (score > 0) {
+        winSound.volume = Math.min(1, score / 100);
+        winSound.play();
+      } else {
+        loseSound.play();
+      }
+
+      spinCounter++;
+      const summary = `#${spinCounter.toString().padStart(2, '0')} +${score.toString().padStart(4)} [${combos.join(', ')}]`;
+      spinHistory.unshift(summary);
+      if (spinHistory.length > 50) spinHistory.pop();
+
+      drawGrid();
+      spinning = false;
+    }
+
+    canvas.addEventListener('click', e => {
+      const x = e.clientX, y = e.clientY;
+      if (x >= buttonX && x <= buttonX + buttonWidth && y >= buttonY && y <= buttonY + buttonHeight) {
+        spin();
+      }
+    });
+
+    for (let r = 0; r < gridSize; r++) {
+      slotGrid[r] = Array.from({ length: gridSize }, randomSymbol);
+    }
+    drawGrid();
+  </script>
+</body>
 </html>
