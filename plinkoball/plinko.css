@@ -1,0 +1,18 @@
+body {
+    margin: 0;
+    overflow: hidden;
+    /* Voorkomt scrollbars */
+    display: block;
+    /* Verwijder flex centering */
+    background-color: #1e1e1e;
+    /* Lichte achtergrondkleur */
+}
+
+canvas {
+    border: none;
+    /* Verwijder rand */
+    display: block;
+    /* Zorgt dat canvas geen extra ruimte onderaan krijgt */
+    background-color: #1e1e1e;
+    /* Iets donkerdere canvas achtergrond */
+}

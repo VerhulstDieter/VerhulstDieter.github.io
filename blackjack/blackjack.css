@@ -1,0 +1,40 @@
+html,
+body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    /* Voorkom scrollbars */
+    width: 100%;
+    height: 100%;
+    background-color: #1e1e1e;
+    /* Donkere achtergrond voor de pagina */
+}
+
+#blackjackCanvas {
+    display: block;
+    /* Verwijdert extra ruimte onder het canvas */
+    background-color: #1e1e1e;
+    /* Typische casino tafelkleur */
+    /* Width en Height worden via JavaScript ingesteld op window.innerWidth/Height */
+}
+
+button {
+    padding: 10px 20px;
+    margin: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    border: none;
+    border-radius: 5px;
+    background-color: #4CAF50;
+    color: white;
+}
+
+button:hover {
+    background-color: #45a049;
+}
+
+#messages {
+    margin-top: 10px;
+    font-size: 18px;
+    color: #333;
+}

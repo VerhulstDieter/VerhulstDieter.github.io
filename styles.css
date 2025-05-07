@@ -1,0 +1,384 @@
+body {
+    font-family: 'monospace';
+    /* Moderner lettertype */
+    margin: 0;
+    padding: 0;
+    background: #1e1e1e;
+    /* Aangepaste achtergrondkleur */
+    color: #fff;
+    /* Tekstkleur aangepast voor donkere achtergrond */
+    text-align: center;
+    min-height: 100vh;
+    /* Zorgt ervoor dat de gradient de hele hoogte vult */
+    display: flex;
+    /* Helpt bij het positioneren van de footer */
+    flex-direction: column;
+    /* Stapelt elementen verticaal */
+}
+
+header {
+    background-color: rgba(0, 0, 0, 0.7);
+    /* Semi-transparante donkere achtergrond */
+    color: #fff;
+    padding: 1.2em 20px;
+    /* Padding links en rechts toegevoegd voor ruimte */
+    /* Iets minder verticale padding voor een compactere header */
+    margin-bottom: 25px;
+    /* Iets minder ruimte onder de header */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    /* Iets subtielere schaduw */
+    display: flex;
+    /* Maak header een flex container */
+    justify-content: space-between;
+    /* Verdeel ruimte tussen titel en coins */
+    align-items: center;
+    /* Centreer items verticaal */
+}
+
+header h1 {
+    margin: 0;
+    font-size: 2.8em;
+    /* Iets groter voor meer impact */
+    font-weight: bold;
+    color: #ffffff;
+    /* Helder wit voor maximaal contrast */
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5), /* Een enkele, donkere, zachte schaduw voor diepte */
+    0 0 10px rgba(255, 255, 255, 0.1);
+    /* Zeer subtiele witte gloed voor een 'schoon' accent */
+    padding-bottom: 0;
+    /* Verwijder padding-bottom, align-items regelt verticale positie */
+    /* Extra ruimte onder de titel */
+}
+
+header p {
+    display: none;
+    /* Verberg de paragraaf voor een cleanere look met coins rechts */
+}
+
+#coin-status {
+    margin-top: 0;
+    /* Verwijder margin-top, align-items regelt verticale positie */
+    padding: 8px 15px;
+    background-color: rgba(255, 255, 255, 0.05);
+    /* Zeer subtiele lichte achtergrond voor contrast */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    /* Zeer subtiele lichte rand */
+    border-radius: 20px;
+    /* Afgeronde hoeken */
+    display: inline-block;
+    /* Zorgt ervoor dat het niet de volledige breedte inneemt */
+    box-shadow: none;
+    /* Verwijder de aparte schaduw, laat het opgaan in de header */
+    /* margin-left: auto;  Niet meer nodig met flexbox space-between */
+}
+
+#coin-display {
+    font-size: 1.1em;
+    color: #ffd700;
+    /* Goudkleur voor coins */
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.6);
+    /* Iets aangepaste schaduw voor leesbaarheid */
+}
+
+main {
+    flex: 1;
+    /* Zorgt ervoor dat de main content de beschikbare ruimte vult */
+    padding-bottom: 80px;
+    /* Ruimte voor de vaste footer */
+}
+
+
+/* Stijlen voor de knop die de overlay opent */
+
+#open-wheel-trigger-section {
+    background-color: rgba(255, 255, 255, 0.05);
+    padding: 15px;
+    margin: 20px auto;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    max-width: 400px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+#open-wheel-button {
+    background: linear-gradient(to right, #00c6ff, #0072ff);
+    /* Blauwe gradient */
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 1.1em;
+    font-weight: bold;
+    margin-bottom: 10px;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: background 0.3s ease, transform 0.2s ease;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+#open-wheel-button:hover {
+    background: linear-gradient(to right, #00b2e6, #005bb5);
+    transform: scale(1.05);
+}
+
+#open-wheel-button:disabled {
+    background: #555;
+    color: #aaa;
+    cursor: not-allowed;
+    transform: scale(1);
+}
+
+#open-wheel-timer {
+    font-size: 0.9em;
+    color: #ccc;
+}
+
+#open-wheel-countdown {
+    font-weight: bold;
+    color: #ffd700;
+}
+
+
+/* Stijlen voor de Rad Overlay (Modal) */
+
+#wheel-overlay {
+    /* Voorheen #claim-section */
+    display: none;
+    /* Standaard verborgen */
+    position: fixed;
+    /* Blijft op dezelfde plek, zelfs bij scrollen */
+    z-index: 1000;
+    /* Zorgt dat het bovenaan ligt */
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    /* Scrollbalk indien nodig */
+    background-color: rgba(0, 0, 0, 0.6);
+    /* Zwarte achtergrond met doorzichtigheid */
+    padding-top: 60px;
+    /* Ruimte bovenaan */
+}
+
+.modal-content {
+    background-color: #2c2c2c;
+    /* Donkere achtergrond voor de modal box */
+    color: #f1f1f1;
+    margin: 5% auto;
+    /* 5% van boven, gecentreerd */
+    padding: 25px;
+    border: 1px solid #555;
+    width: 90%;
+    /* Breedte van de modal box */
+    max-width: 450px;
+    /* Maximale breedte */
+    border-radius: 10px;
+    text-align: center;
+    position: relative;
+    /* Voor positionering van de sluitknop */
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+}
+
+.modal-content h2 {
+    color: #00e6e6;
+    font-size: 1.8em;
+    margin-top: 0;
+    margin-bottom: 10px;
+    text-shadow: 0 0 5px rgba(0, 230, 230, 0.5);
+}
+
+.modal-content p {
+    color: #f0f0f0;
+    font-size: 1em;
+    margin-bottom: 15px;
+}
+
+.close-button {
+    color: #aaa;
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    font-size: 28px;
+    font-weight: bold;
+    transition: color 0.3s ease;
+}
+
+.close-button:hover,
+.close-button:focus {
+    color: #fff;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+#wheelCanvas {
+    display: block;
+    margin: 20px auto;
+}
+
+#spin-now-button {
+    /* Stijl voor de knop in de overlay */
+    background: linear-gradient(to right, #56ab2f, #a8e063);
+    /* Groene gradient */
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    font-size: 1.1em;
+    font-weight: bold;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: background 0.3s ease, transform 0.2s ease;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    margin-top: 10px;
+}
+
+#spin-now-button:hover {
+    background: linear-gradient(to right, #4a9628, #97c956);
+    transform: scale(1.05);
+}
+
+#spin-now-button:disabled {
+    background: #555;
+    color: #aaa;
+    cursor: not-allowed;
+    transform: scale(1);
+}
+
+
+/* Verberg de oude claim-section stijlen als die nog ergens gebruikt worden */
+
+
+/* #claim-section { display: none !important; } */
+
+.game-selection h2 {
+    margin-bottom: 25px;
+    /* Iets minder ruimte */
+    font-size: 2em;
+    /* Grotere sectietitel */
+    color: #fff;
+    /* Witte tekst voor contrast met gradient */
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
+    /* Tekstschaduw voor leesbaarheid aangepast */
+}
+
+.game-options {
+    display: flex;
+    justify-content: center;
+    gap: 25px;
+    /* Iets minder ruimte tussen de kaarten */
+    flex-wrap: wrap;
+    padding: 0 20px;
+}
+
+.game-card {
+    background-color: rgba(255, 255, 255, 0.9);
+    /* Licht semi-transparant wit */
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    /* Zeer subtiele rand voor definitie */
+    border-radius: 10px;
+    /* Iets minder ronde hoeken */
+    padding: 20px;
+    /* Iets minder padding */
+    width: 270px;
+    /* Iets smallere kaarten */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    /* Subtielere en zachtere schaduw */
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    /* Iets snellere transitie */
+    display: flex;
+    /* Toegevoegd voor betere layout met afbeelding */
+    flex-direction: column;
+    /* Toegevoegd voor betere layout met afbeelding */
+    align-items: center;
+    /* Centreert inhoud horizontaal */
+}
+
+.game-card img {
+    width: 100%;
+    /* Maakt de afbeelding zo breed als de kaart padding toelaat */
+    max-height: 140px;
+    /* Iets kleinere maximale hoogte */
+    object-fit: cover;
+    /* Zorgt dat de afbeelding de ruimte vult zonder vervorming, snijdt bij indien nodig */
+    border-radius: 6px;
+    /* Iets minder ronde hoeken voor de afbeelding */
+    margin-bottom: 12px;
+    /* Iets minder ruimte onder de afbeelding */
+}
+
+.game-card:hover {
+    transform: translateY(-8px);
+    /* Iets subtieler lift effect */
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25);
+    /* Aangepaste schaduw bij hover */
+}
+
+.game-card h3 {
+    margin-top: 0;
+    color: #2c3e50;
+    /* Donkerblauw voor titels, goed leesbaar op lichte achtergrond */
+    font-size: 1.4em;
+    /* Iets kleiner voor een strakkere look */
+    margin-bottom: 8px;
+    /* Ruimte onder de titel */
+}
+
+.game-card p {
+    font-size: 0.9em;
+    /* Iets kleiner voor een strakkere look */
+    color: #34495e;
+    /* Donkergrijs voor tekst, goed leesbaar op lichte achtergrond */
+    line-height: 1.5;
+    /* Iets compactere regelhoogte */
+}
+
+.game-card button {
+    background: linear-gradient(to right, #56ab2f, #a8e063);
+    /* Groene gradient voor knoppen */
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    /* Meer padding voor knoppen */
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 1em;
+    /* Iets grotere knoptekst */
+    font-weight: bold;
+    margin-top: 15px;
+    border-radius: 25px;
+    /* Rondere knoppen */
+    cursor: pointer;
+    transition: background 0.3s ease, transform 0.2s ease;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.game-card button:hover {
+    background: linear-gradient(to right, #4a9628, #97c956);
+    /* Donkerdere gradient bij hover */
+    transform: scale(1.05);
+    /* Lichte zoom bij hover */
+}
+
+.game-card button:active {
+    transform: scale(0.95);
+    /* Klik effect */
+}
+
+footer {
+    background-color: rgba(0, 0, 0, 0.8);
+    /* Donkerdere semi-transparante footer */
+    color: #aaa;
+    /* Aangepaste lichtere grijze tekst voor donkere achtergrond */
+    text-align: center;
+    padding: 1.5em 0;
+    /* Meer padding */
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    font-size: 0.9em;
+}

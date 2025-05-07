@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="nl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gok Website Home</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <header>
+        <h1>Deatrogames!</h1>
+        <div id="coin-status">
+            <span id="coin-display">Coins: Laden...</span>
+        </div>
+    </header>
+
+    <main>
+        <section class="game-selection">
+            <h2>Kies een Spel:</h2>
+            <div class="game-options">
+                <div class="game-card" id="slots">
+                    <img src="images/slotmachine.png" alt="Slot Machine Spel">
+                    <h3>Slot Machine</h3>
+                    <p>Draai de rollen voor grote prijzen!</p>
+                    <button onclick="startGame('slots')">Speel Slot Machine</button>
+                </div>
+                <div class="game-card" id="plinko">
+                    <img src="images/plinkoball.png" alt="Plinko Spel">
+                    <h3>WIP Plinko Ball</h3>
+                    <p>Laat de bal vallen en win!</p>
+                    <button onclick="startGame('plinko')">Speel Plinko</button>
+                </div>
+                <div class="game-card" id="blackjack">
+                    <img src="images/blackjack.png" alt="Blackjack Spel">
+                    <h3>WIP Blackjack</h3>
+                    <p>Versla de dealer en kom zo dicht mogelijk bij 21!</p>
+                    <button onclick="startGame('blackjack')">Speel Blackjack</button>
+                </div>
+            </div>
+        </section>
+        <!-- De claim sectie is hier verwijderd -->
+    </main>
+
+    <!-- Knop om de rad overlay te openen -->
+    <div id="open-wheel-trigger-section">
+        <button id="open-wheel-button" onclick="openWheelOverlay()">Claim Gratis Spin!</button>
+        <p id="open-wheel-timer">Volgende spin beschikbaar over: <span id="open-wheel-countdown">10:00</span></p>
+    </div>
+
+    <!-- De Rad Overlay (Modal) -->
+    <div id="wheel-overlay" class="modal-hidden">
+        <!-- Was #claim-section, nu #wheel-overlay en verborgen -->
+        <div class="modal-content">
+            <span class="close-button" onclick="closeWheelOverlay()">&times;</span>
+            <h2>Draai aan het Rad!</h2>
+            <p>Win tussen de 200 en 2000 coins!</p>
+            <canvas id="wheelCanvas" width="300" height="300"></canvas>
+            <button id="spin-now-button" onclick="handleSpinWheel()">Draai Nu!</button>
+            <!-- Nieuwe ID voor de knop in de overlay -->
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
