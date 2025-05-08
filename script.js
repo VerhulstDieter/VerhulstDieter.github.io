@@ -261,7 +261,7 @@ function initializeAndDisplayCoins() {
     const coinDisplayElement = document.getElementById('coin-display');
     if (coinDisplayElement) {
         console.log("Element 'coin-display' gevonden. Coins worden bijgewerkt.");
-        coinDisplayElement.textContent = `Coins: ${coins}`;
+        coinDisplayElement.textContent = `💰: ${coins}`;
     } else {
         console.warn("Element met ID 'coin-display' niet gevonden om coins weer te geven.");
     }
